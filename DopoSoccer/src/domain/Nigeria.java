@@ -20,13 +20,7 @@ public class Nigeria extends Nationality {
      */
     @Override
     public void executePowerShot(Ball ball, Player shooter, Match match){
-        int dir;
-        if(shooter.isFacingRight()){
-            dir = 1;
-        }
-        else{
-            dir = -1;
-        }
+        int dir = shooter.getFacingDirection();
         ball.activatePowerShot(this, shooter, true, 1.05);
         ball.setVelX(dir * 640.0);
         ball.setVelY(420.0);

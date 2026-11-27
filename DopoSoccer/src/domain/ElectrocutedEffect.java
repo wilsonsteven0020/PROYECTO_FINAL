@@ -9,7 +9,7 @@ public class ElectrocutedEffect extends StatusEffect {
      * Creates a new ElectrocutedEffect with a duration of 3.0 seconds
      */
     public ElectrocutedEffect(){
-        super("Electrocutado", 3.0);
+        super(3.0);
     }
 
     /**

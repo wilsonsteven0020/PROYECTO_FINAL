@@ -275,21 +275,34 @@ public class Match implements Serializable{
     }
 
     /**
-     * Activates the power aura for the specified player
+     * Returns the player corresponding to the given index
      * @param playerNum 0 for leftPlayer, 1 for rightPlayer
+     * @return corresponding Player
      */
-    public void usePlayerPower(int playerNum){
-        if(isPaused || thereIsWinner){
-            return;
-        }
+    private Player getPlayer(int playerNum){
         if(playerNum == 0){
-            leftPlayer.activatePower();
+            return leftPlayer;
         }
         else{
-            rightPlayer.activatePower();
+            return rightPlayer;
         }
     }
 
+    /**
+     * Returns the rival of the specified player
+     * @param playerNum 0 for leftPlayer, 1 for rightPlayer
+     * @return rival Player
+     */
+    private Player getRival(int playerNum){
+        if(playerNum == 0){
+            return rightPlayer;
+        }
+        else{
+            return leftPlayer;
+        }
+    }
+
+   
     /**
      * Removes any fake illusion balls whose timer has expired
      */
@@ -302,23 +315,35 @@ public class Match implements Serializable{
     }
 
     /**
-     * Spawns fake illusion balls for the United States power shot
+     * Spawns fake illusion balls for power shots that create clones
      * @param realBall the real ball
      * @param dir horizontal shot direction (1 or -1)
      * @param count number of fake balls to create
      * @param duration lifetime of fake balls in seconds
+     * @param skinName skin identifier for the fake balls
      */
-    public void spawnIllusionBalls(Ball realBall, int dir, int count, double duration){
+    public void spawnIllusionBalls(Ball realBall, int dir, int count, double duration, String skinName){
         for(int i = 0; i < count; i++){
             Ball fake = new Ball(realBall.getPosX(), realBall.getPosY(), realBall.getWidth(), realBall.getHeight());
             fake.setScale(scale);
-            fake.setFakeBall(duration);
+            fake.setFakeBall(duration, skinName);
             double speedX = (420.0 + (i * 45.0)) * dir * scale;
             double speedY = (-180.0 - ((i % 4) * 110.0)) * scale;
             fake.setVelX(speedX);
             fake.setVelY(speedY);
             balls.add(fake);
         }
+    }
+
+/**
+     * Activates the power aura for the specified player
+     * @param playerNum 0 for leftPlayer, 1 for rightPlayer
+     */
+    public void usePlayerPower(int playerNum){
+        if(isPaused || thereIsWinner){
+            return;
+        }
+        getPlayer(playerNum).activatePower();
     }
 
     /**
@@ -330,12 +355,7 @@ public class Match implements Serializable{
         if(isPaused || thereIsWinner){
             return;
         }
-        if(playerNum == 0){
-            leftPlayer.moveHorizontal(direction);
-        }
-        else{
-            rightPlayer.moveHorizontal(direction);
-        }
+        getPlayer(playerNum).moveHorizontal(direction);
     }
 
     /**
@@ -346,13 +366,10 @@ public class Match implements Serializable{
         if(isPaused || thereIsWinner){
             return;
         }
-        if(playerNum == 0){
-            leftPlayer.jump(getSurfaceYForPlayer(leftPlayer));
-        }
-        else{
-            rightPlayer.jump(getSurfaceYForPlayer(rightPlayer));
-        }
+        Player player = getPlayer(playerNum);
+        player.jump(getSurfaceYForPlayer(player));
     }
+
 
     /**
      * Prevents both players from overlapping horizontally using their hitboxes
@@ -400,9 +417,9 @@ public class Match implements Serializable{
 
             Player first = leftPlayer;
             Player second = rightPlayer;
-            double ballCenterX = ball.getHitboxX() + ball.getHitboxWidth() / 2.0;
-            double distLeft = Math.abs((leftPlayer.getHitboxX() + leftPlayer.getHitboxWidth() / 2.0) - ballCenterX);
-            double distRight = Math.abs((rightPlayer.getHitboxX() + rightPlayer.getHitboxWidth() / 2.0) - ballCenterX);
+            double ballCenterX = ball.getHitboxCenterX();
+            double distLeft = Math.abs(leftPlayer.getHitboxCenterX() - ballCenterX);
+            double distRight = Math.abs(rightPlayer.getHitboxCenterX() - ballCenterX);
             if(distRight < distLeft){
                 first = rightPlayer;
                 second = leftPlayer;
@@ -413,13 +430,8 @@ public class Match implements Serializable{
                 resolvePlayerBallCollision(second, ball);
             }
 
-            double prevVelX = ball.getVelX();
-            double prevVelY = ball.getVelY();
             leftSoccerGoal.bounceCrossbar(ball);
             rightSoccerGoal.bounceCrossbar(ball);
-            if(ball.hasActivePower() && (ball.getVelX() != prevVelX || ball.getVelY() != prevVelY)){
-                ball.clearPowerShot();
-            }
         }
         removeExpiredFakeBalls();
         checkGoals();
@@ -452,14 +464,24 @@ public class Match implements Serializable{
         target.applyStatusEffect(power.createStatusEffect());
         ball.clearPowerShot(0.25);
 
-        double pCenterX = target.getHitboxX() + target.getHitboxWidth() / 2.0;
-        double bCenterX = ball.getHitboxX() + ball.getHitboxWidth() / 2.0;
+        double pCenterX = target.getHitboxCenterX();
+        double bCenterX = ball.getHitboxCenterX();
         int reboundDir;
         if(Math.abs(incomingVelX) > 10.0){
-            reboundDir = (incomingVelX > 0) ? -1 : 1;
+            if(incomingVelX > 0){
+                reboundDir = -1;
+            }
+            else{
+                reboundDir = 1;
+            }
         }
         else{
-            reboundDir = (bCenterX >= pCenterX) ? 1 : -1;
+            if(bCenterX >= pCenterX){
+                reboundDir = 1;
+            }
+            else{
+                reboundDir = -1;
+            }
         }
 
         double pushX;
@@ -501,9 +523,15 @@ public class Match implements Serializable{
             return true;
         }
 
-        double pCenterX = player.getHitboxX() + player.getHitboxWidth() / 2.0;
-        double bCenterX = ball.getHitboxX() + ball.getHitboxWidth() / 2.0;
-        int dir = (bCenterX >= pCenterX) ? 1 : -1;
+        double pCenterX = player.getHitboxCenterX();
+        double bCenterX = ball.getHitboxCenterX();
+        int dir;
+        if(bCenterX >= pCenterX){
+            dir = 1;
+        }
+        else{
+            dir = -1;
+        }
 
         if(ball.getPosY() + ball.getHeight() <= player.getHitboxY() + player.getHitboxHeight() * 0.35){
             ball.setPosY(player.getHitboxY() - ball.getHeight());
@@ -535,8 +563,8 @@ public class Match implements Serializable{
         if(isPaused || thereIsWinner){
             return;
         }
-        Player kicker = (playerNum == 0) ? leftPlayer : rightPlayer;
-        Player rival = (playerNum == 0) ? rightPlayer : leftPlayer;
+        Player kicker = getPlayer(playerNum);
+        Player rival = getRival(playerNum);
 
         if(!kicker.kick()){
             return;
@@ -544,7 +572,7 @@ public class Match implements Serializable{
         if(kicker.isInKickRange(rival)){
             rival.takeDamage(kicker.getKickDamage());
         }
-        int dir = kicker.isFacingRight() ? 1 : -1;
+        int dir = kicker.getFacingDirection();
 
         ArrayList<Ball> currentBalls = new ArrayList<>(balls);
         for(Ball ball : currentBalls){
@@ -566,6 +594,7 @@ public class Match implements Serializable{
             }
         }
     }
+
 
     /**
      * Registers a goal and charges the scored-against player's power bar by 25%
@@ -663,4 +692,5 @@ public class Match implements Serializable{
         matchWinner.givePoints(100);
         matchLoser.givePoints(25);
     }
+    
 }

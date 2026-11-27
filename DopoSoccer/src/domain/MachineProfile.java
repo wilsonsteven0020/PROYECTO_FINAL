@@ -68,38 +68,6 @@ public interface MachineProfile extends Serializable {
         }
     }
 
-    /**
-     * Calculates the horizontal distance from the ball center to the mouth of the rival goal
-     * @param match current match
-     * @param machine machine player
-     * @param ball target ball
-     * @return horizontal distance in pixels
-     */
-    default double getDistanceToRivalGoal(Match match, MachinePlayer machine, Ball ball){
-        SoccerGoal rivalGoal = getRivalGoal(match, machine);
-        double ballCenterX = ball.getHitboxX() + ball.getHitboxWidth() / 2.0;
-        if(machine.isFacingRight()){
-            return rivalGoal.getPosX() - ballCenterX;
-        }
-        else{
-            return ballCenterX - (rivalGoal.getPosX() + rivalGoal.getWidth());
-        }
-    }
-
-    /**
-     * Indicates if the ball is bouncing high near the rival goal where jumping would send it over the crossbar
-     * @param match current match
-     * @param machine machine player
-     * @param ball target ball
-     * @return true if the machine should step back and let the ball drop
-     */
-    default boolean isBallHighNearRivalGoal(Match match, MachinePlayer machine, Ball ball){
-        double scale = machine.getScale();
-        double distToRivalGoal = getDistanceToRivalGoal(match, machine, ball);
-        SoccerGoal rivalGoal = getRivalGoal(match, machine);
-        double ballCenterY = ball.getPosY() + ball.getHeight() / 2.0;
-        return distToRivalGoal < (240.0 * scale) && ballCenterY < rivalGoal.getPosY() + (30.0 * scale);
-    }
 
     /**
      * Returns a safe X position to step back to when the ball is high near the rival goal
@@ -140,12 +108,27 @@ public interface MachineProfile extends Serializable {
         return distToRivalGoal >= (330.0 * scale) && isBallLow;
     }
 
-    /**
-     * Selects a ball to track without cheating when illusion balls are active
-     * @param match current match
-     * @param machine machine player
-     * @return closest Ball or null if none exist
-     */
+
+
+    default double getDistanceToRivalGoal(Match match, MachinePlayer machine, Ball ball){
+        SoccerGoal rivalGoal = getRivalGoal(match, machine);
+        double ballCenterX = ball.getHitboxCenterX();
+        if(machine.isFacingRight()){
+            return rivalGoal.getPosX() - ballCenterX;
+        }
+        else{
+            return ballCenterX - (rivalGoal.getPosX() + rivalGoal.getWidth());
+        }
+    }
+
+    default boolean isBallHighNearRivalGoal(Match match, MachinePlayer machine, Ball ball){
+        double scale = machine.getScale();
+        double distToRivalGoal = getDistanceToRivalGoal(match, machine, ball);
+        SoccerGoal rivalGoal = getRivalGoal(match, machine);
+        double ballCenterY = ball.getHitboxCenterY();
+        return distToRivalGoal < (240.0 * scale) && ballCenterY < rivalGoal.getPosY() + (30.0 * scale);
+    }
+
     default Ball selectTargetBall(Match match, MachinePlayer machine){
         ArrayList<Ball> balls = match.getBalls();
         if(balls == null || balls.isEmpty()){
@@ -155,16 +138,14 @@ public interface MachineProfile extends Serializable {
             return balls.get(0);
         }
 
-        double machineX = machine.getHitboxX() + machine.getHitboxWidth() / 2.0;
-        double machineY = machine.getHitboxY() + machine.getHitboxHeight() / 2.0;
+        double machineX = machine.getHitboxCenterX();
+        double machineY = machine.getHitboxCenterY();
         Ball closest = balls.get(0);
         double minDistSq = Double.MAX_VALUE;
 
         for(Ball ball : balls){
-            double bx = ball.getHitboxX() + ball.getHitboxWidth() / 2.0;
-            double by = ball.getHitboxY() + ball.getHitboxHeight() / 2.0;
-            double dx = bx - machineX;
-            double dy = by - machineY;
+            double dx = ball.getHitboxCenterX() - machineX;
+            double dy = ball.getHitboxCenterY() - machineY;
             double distSq = (dx * dx) + (dy * dy);
             if(distSq < minDistSq){
                 minDistSq = distSq;
@@ -174,65 +155,24 @@ public interface MachineProfile extends Serializable {
         return closest;
     }
 
-    /**
-     * Indicates if the given ball is currently in the machine's defensive half
-     * @param match current match
-     * @param machine machine player
-     * @param ball ball to evaluate
-     * @return true if the ball is in the machine's own half
-     */
     default boolean isBallInOwnHalf(Match match, MachinePlayer machine, Ball ball){
-        double ballCenterX = ball.getHitboxX() + ball.getHitboxWidth() / 2.0;
-        double halfField = match.getFieldWidth() / 2.0;
-        if(machine.isFacingRight()){
-            return ballCenterX < halfField;
-        }
-        else{
-            return ballCenterX > halfField;
-        }
+        double dx = ball.getHitboxCenterX() - (match.getFieldWidth() / 2.0);
+        return (dx * machine.getFacingDirection()) < 0;
     }
 
-    /**
-     * Indicates if the ball has passed behind the machine toward the machine's own goal
-     * @param machine machine player
-     * @param ball target ball
-     * @return true if the ball is behind the machine
-     */
     default boolean isBallBehindMachine(MachinePlayer machine, Ball ball){
-        double ballCenterX = ball.getHitboxX() + ball.getHitboxWidth() / 2.0;
-        double machineCenterX = machine.getHitboxX() + machine.getHitboxWidth() / 2.0;
-        if(machine.isFacingRight()){
-            return ballCenterX < machineCenterX;
-        }
-        else{
-            return ballCenterX > machineCenterX;
-        }
+        double dx = ball.getHitboxCenterX() - machine.getHitboxCenterX();
+        return (dx * machine.getFacingDirection()) < 0;
     }
 
-    /**
-     * Calculates an X target slightly behind the ball so the machine pushes it toward the rival goal
-     * @param machine machine player
-     * @param ball target ball
-     * @return recommended center X coordinate
-     */
     default double getAttackPositionX(MachinePlayer machine, Ball ball){
-        double ballCenterX = ball.getHitboxX() + ball.getHitboxWidth() / 2.0;
+        double ballCenterX = ball.getHitboxCenterX();
         double offset = machine.getHitboxWidth() * 0.45;
-        if(machine.isFacingRight()){
-            return ballCenterX - offset;
-        }
-        else{
-            return ballCenterX + offset;
-        }
+        return ballCenterX - (machine.getFacingDirection() * offset);
     }
 
-    /**
-     * Moves the machine horizontally toward the given center X target using scaled tolerance
-     * @param machine machine player
-     * @param targetX desired center X coordinate
-     */
     default void moveTowardX(MachinePlayer machine, double targetX){
-        double centerX = machine.getHitboxX() + machine.getHitboxWidth() / 2.0;
+        double centerX = machine.getHitboxCenterX();
         double tolerance = 16.0 * machine.getScale();
         if(targetX > centerX + tolerance){
             machine.moveHorizontal(1);
@@ -245,17 +185,9 @@ public interface MachineProfile extends Serializable {
         }
     }
 
-    /**
-     * Determines if the ball is within scaled horizontal and aerial range to jump for it
-     * @param machine machine player
-     * @param ball target ball
-     * @return true if the machine should jump
-     */
     default boolean shouldJumpForBall(MachinePlayer machine, Ball ball){
         double scale = machine.getScale();
-        double ballCenterX = ball.getHitboxX() + ball.getHitboxWidth() / 2.0;
-        double machineCenterX = machine.getHitboxX() + machine.getHitboxWidth() / 2.0;
-        double dx = Math.abs(ballCenterX - machineCenterX);
+        double dx = Math.abs(ball.getHitboxCenterX() - machine.getHitboxCenterX());
 
         double ballBottomY = ball.getPosY() + ball.getHeight();
         boolean aboveHead = ballBottomY < machine.getHitboxY() + (12.0 * scale);

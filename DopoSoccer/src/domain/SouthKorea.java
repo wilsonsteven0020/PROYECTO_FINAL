@@ -22,7 +22,7 @@ public class SouthKorea extends Nationality {
      */
     @Override
     public void executePowerShot(Ball ball, Player shooter, Match match){
-        int dir = shooter.isFacingRight() ? 1 : -1;
+        int dir = shooter.getFacingDirection();
         double scale = ball.getScale();
         double margin = 4.0 * scale;
 

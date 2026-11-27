@@ -5,7 +5,7 @@ package domain;
  */
 public class ExpertProfile implements MachineProfile {
 
-    private static final double EXPERT_INTERVAL = 0.01;
+    private static final double EXPERT_INTERVAL = 0.04;
 
     private final OffensiveProfile offensive;
     private final DefensiveProfile defensive;
@@ -43,9 +43,7 @@ public class ExpertProfile implements MachineProfile {
         Player rival = getRival(match, machine);
 
         if(targetBall.hasActivePower() && targetBall.getShooter() == rival){
-            double ballCenterX = targetBall.getHitboxX() + targetBall.getHitboxWidth() / 2.0;
-            double machineCenterX = machine.getHitboxX() + machine.getHitboxWidth() / 2.0;
-            double dx = ballCenterX - machineCenterX;
+            double dx = targetBall.getHitboxCenterX() - machine.getHitboxCenterX();
             boolean comingTowardMachine = (dx < 0 && targetBall.getVelX() > 0) || (dx > 0 && targetBall.getVelX() < 0);
             if(comingTowardMachine && Math.abs(dx) < 170.0 * machine.getScale()){
                 match.jumpPlayer(machineNum);
@@ -84,9 +82,9 @@ public class ExpertProfile implements MachineProfile {
      * @return true if the machine is closer or at equal distance
      */
     private boolean isCloserToBall(MachinePlayer machine, Player rival, Ball ball){
-        double ballCenterX = ball.getHitboxX() + ball.getHitboxWidth() / 2.0;
-        double machineDist = Math.abs(ballCenterX - (machine.getHitboxX() + machine.getHitboxWidth() / 2.0));
-        double rivalDist = Math.abs(ballCenterX - (rival.getHitboxX() + rival.getHitboxWidth() / 2.0));
+        double ballCenterX = ball.getHitboxCenterX();
+        double machineDist = Math.abs(ballCenterX - machine.getHitboxCenterX());
+        double rivalDist = Math.abs(ballCenterX - rival.getHitboxCenterX());
         return machineDist <= rivalDist;
     }
 }

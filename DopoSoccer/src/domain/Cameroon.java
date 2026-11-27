@@ -20,13 +20,7 @@ public class Cameroon extends Nationality {
      */
     @Override
     public void executePowerShot(Ball ball, Player shooter, Match match){
-        int dir;
-        if(shooter.isFacingRight()){
-            dir = 1;
-        }
-        else{
-            dir = -1;
-        }
+        int dir = shooter.getFacingDirection();
         ball.activatePowerShot(this, shooter, false, 0.75);
         ball.setVelX(dir * 740.0);
         ball.setVelY(0.0);

@@ -83,7 +83,6 @@ public class Player extends Entity{
         return getPosX() + (getWidth() - getHitboxWidth()) / 2.0;
     }
 
-    @Override
     public boolean isMachine(){
         return false;
     }
@@ -224,7 +223,7 @@ public class Player extends Entity{
      * Returns the country name of the player's nationality
      * @return country name
      */
-    public String getIdentificaction(){
+    public String getIdentification(){
         return nationality.getCountryName();
     }
 
@@ -260,14 +259,6 @@ public class Player extends Entity{
         if(this.activeEffect != null){
             this.activeEffect.onApply(this);
         }
-    }
-
-    /**
-     * Returns the currently active status effect
-     * @return active StatusEffect or null
-     */
-    public StatusEffect getActiveEffect(){
-        return activeEffect;
     }
 
     /**
@@ -406,13 +397,12 @@ public class Player extends Entity{
         setVelY(0);
     }
 
-    /**
+/**
      * Moves the player horizontally (-1 left, 1 right, 0 stop)
      * @param direction movement direction
      */
     public void moveHorizontal(int direction){
         if(!canMove()){
-            setVelX(0);
             return;
         }
         setVelX(direction * getEffectiveSpeed());
@@ -540,6 +530,19 @@ public class Player extends Entity{
     }
 
     /**
+     * Returns the horizontal direction the player is facing
+     * @return 1 if facing right, -1 if facing left
+     */
+    public int getFacingDirection(){
+        if(facingRight){
+            return 1;
+        }
+        else{
+            return -1;
+        }
+    }
+
+    /**
      * Indicates if the player currently has an active power aura
      * @return true if aura is active
      */
@@ -560,14 +563,6 @@ public class Player extends Entity{
      */
     public boolean isJumping(){
         return isJumping;
-    }
-
-    /**
-     * Indicates if the player is currently kicking
-     * @return true if kicking
-     */
-    public boolean isKicking(){
-        return isKicking;
     }
 
     /**

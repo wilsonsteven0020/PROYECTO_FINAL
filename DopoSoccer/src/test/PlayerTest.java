@@ -1,6 +1,8 @@
 package test;
 
 import domain.Player;
+import domain.PushEffect;
+import domain.SouthKorea;
 import domain.UnconsciousEffect;
 import domain.DopoSoccerException;
 import domain.ElectrocutedEffect;
@@ -9,24 +11,23 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
-
-
 public class PlayerTest {
     private Player p;
-    
+
     @Before
     public void setUp(){
-        p = new Player(1,0,2,2);
+        p = new Player(1, 0, 2, 2);
     }
+
     /**
-     * Should stats level start by 1. 
+     * Should stats level start by 1.
      */
     @Test
     public void shouldStatLevelsStartByOne(){
-        assertEquals(1,p.getStatLevel("Speed"));
-        assertEquals(1,p.getStatLevel("Jump"));
-        assertEquals(1,p.getStatLevel("Kick"));
-        assertEquals(1,p.getStatLevel("Survival"));
+        assertEquals(1, p.getStatLevel("Speed"));
+        assertEquals(1, p.getStatLevel("Jump"));
+        assertEquals(1, p.getStatLevel("Kick"));
+        assertEquals(1, p.getStatLevel("Survival"));
     }
 
     /**
@@ -50,12 +51,12 @@ public class PlayerTest {
             assertEquals(0, p.getPoints());
         }
         catch(DopoSoccerException e){
-            fail("It throw an exception");
+            fail("It threw an exception");
         }
     }
 
     /**
-     * Should throw an exception if there's no enough points to buy an update.
+     * Should throw an exception if there's not enough points to buy an update.
      */
     @Test
     public void shouldThrowAnExceptionIfThereIsNoEnoughPointsForAnUpdate(){
@@ -64,7 +65,7 @@ public class PlayerTest {
             fail("It didn't throw an exception");
         }
         catch(DopoSoccerException e){
-            assertEquals(DopoSoccerException.NOT_ENOUGH_POINTS,e.getMessage());
+            assertEquals(DopoSoccerException.NOT_ENOUGH_POINTS, e.getMessage());
         }
     }
 
@@ -86,15 +87,14 @@ public class PlayerTest {
             assertEquals(2000, p.getUpgradeCost("Speed"));
             p.upgradeStat("Speed");
             assertEquals(0, p.getPoints());
-            
         }
         catch(DopoSoccerException e){
-            fail("It throw an exception");
+            fail("It threw an exception");
         }
     }
 
     /**
-     * Should player starts with zero goals
+     * Should player start with zero goals
      */
     @Test
     public void shouldStartWithZeroGoals(){
@@ -102,7 +102,7 @@ public class PlayerTest {
     }
 
     /**
-     * Should  maxHealth should be bigger if survival us upgraded
+     * Should maxHealth be bigger if survival is upgraded
      */
     @Test
     public void shouldMaxHealthBeBiggerIfSurvivalIsUpgraded(){
@@ -112,7 +112,7 @@ public class PlayerTest {
             p.upgradeStat("Survival");
         }
         catch(DopoSoccerException e){
-            fail("It throw an exception");
+            fail("It threw an exception");
         }
         assertEquals(110.0, p.getMaxHealth(), 0.001);
     }
@@ -124,26 +124,26 @@ public class PlayerTest {
     public void shouldCurrentHealthBeLowerIfITakeDamage(){
         double original = p.getCurrentHealth();
         p.takeDamage(10);
-        assertEquals(original-10.0, p.getCurrentHealth(), 0.001);
+        assertEquals(original - 10.0, p.getCurrentHealth(), 0.001);
     }
 
     /**
-     * Should current health can not be lower than 0.
+     * Should current health never be lower than 0.
      */
     @Test
     public void shouldCurrentHealthAlwaysBeGreaterOrEqualsToZero(){
         p.takeDamage(10000000000000000000000.0);
-        assertEquals(0, p.getCurrentHealth(),0.001);
+        assertEquals(0, p.getCurrentHealth(), 0.001);
     }
 
     /**
-     * Should power bar start by zero and should can charge it
+     * Should power bar start by zero and allow charging it
      */
     @Test
     public void shouldPowerBarStartByZeroAndChargeIt(){
-        assertEquals(0, p.getPowerBar(),0.001);
+        assertEquals(0, p.getPowerBar(), 0.001);
         p.chargePowerBar(20);
-        assertEquals(20.0, p.getPowerBar(),0.001);
+        assertEquals(20.0, p.getPowerBar(), 0.001);
     }
 
     /**
@@ -152,38 +152,40 @@ public class PlayerTest {
     @Test
     public void shouldNotPowerBarBeGreaterThanOneHundred(){
         p.chargePowerBar(10000000000.0);
-        assertEquals(100.0, p.getPowerBar(),0.001);
+        assertEquals(100.0, p.getPowerBar(), 0.001);
     }
+
     /**
      * Should player move horizontal
      */
-    @Test public void shouldPlayerMoveHor(){
+    @Test
+    public void shouldPlayerMoveHor(){
         p.setVelX(1);
         p.updatePosition(2);
-        assertEquals(p.getPosX(),3.0,0.00001);
+        assertEquals(p.getPosX(), 3.0, 0.00001);
     }
 
     /**
      * Should player move vertical
      */
-    @Test 
+    @Test
     public void shouldPlayerMoveVer(){
         p.setVelY(1);
         p.updatePosition(2);
-        assertEquals(p.getPosY(),2.0,0.00001);
+        assertEquals(p.getPosY(), 2.0, 0.00001);
     }
 
     /**
      * Should the players collide
      */
-    @Test 
+    @Test
     public void ShouldPlayerCollide(){
-        Player p2 = new Player(2,0,2,2);
+        Player p2 = new Player(2, 0, 2, 2);
         assertTrue(p2.collidesWith(p));
     }
 
     /**
-     * Should that power aura requires 100% power bar, empties the bar, and blocks re-activation while active
+     * Should power aura require 100% power bar, empty the bar, and block re-activation while active
      */
     @Test
     public void shouldActivateAuraOnlyWhenBarIsFullAndPreventDoubleActivation() {
@@ -199,39 +201,52 @@ public class PlayerTest {
         assertTrue(player.hasActiveAura());
         assertEquals(0.0, player.getPowerBar(), 0.01);
         assertEquals("AuraNormal", player.getSpriteState());
+
         player.chargePowerBar(100.0);
         player.activatePower();
         assertEquals(100.0, player.getPowerBar(), 0.01);
     }
 
     /**
-     * Should applying a new status effect replaces the previous one without accumulating
+     * Should applying a new status effect replace the previous one without accumulating
      */
     @Test
     public void shouldReplacePreviousStatusEffectWhenNewEffectIsApplied() {
         Player player = new Player(200, 400, 90, 90);
         player.resetForNewMatch(200, 400, 90, 90, true);
 
-        player.applyStatusEffect(new ElectrocutedEffect());
-        assertEquals("Electrocutado", player.getActiveEffect().getEffectName());
+        ElectrocutedEffect electrocuted = new ElectrocutedEffect();
+        player.applyStatusEffect(electrocuted);
         assertFalse(player.canJump());
         assertTrue(player.canMove());
+        assertTrue(player.canKick());
+        assertFalse(player.isParalyzed());
+        assertEquals(130.0, player.getEffectiveSpeed(), 0.01);
 
-        player.applyStatusEffect(new UnconsciousEffect());
-        assertEquals("Inconsciente", player.getActiveEffect().getEffectName());
+        UnconsciousEffect unconscious = new UnconsciousEffect();
+        player.applyStatusEffect(unconscious);
         assertFalse(player.canMove());
+        assertFalse(player.canJump());
         assertFalse(player.canKick());
         assertTrue(player.isParalyzed());
+        assertEquals(260.0, player.getEffectiveSpeed(), 0.01);
+
+        player.updateState(0.5, 0, 1000, 490, 100);
+        assertEquals(3.0, electrocuted.getRemainingDuration(), 0.01);
+        assertEquals(2.5, unconscious.getRemainingDuration(), 0.01);
     }
 
-
+    /**
+     * Should charge power bar when updating player state
+     */
+    @Test
     public void shouldUpdatePlayersState(){
-        p.updateState(0.02,0,0,0,0);
+        p.updateState(0.02, 0, 0, 0, 0);
         assertEquals(0.2, p.getPowerBar(), 0.001);
     }
 
     /**
-     * Should stuns the player for 3 seconds and then restores full health
+     * Should stun the player for 3 seconds and then restore full health
      */
     @Test
     public void shouldStunPlayerForThreeSecondsWhenHealthReachesZeroAndThenRestoreFullHealth() {
@@ -254,16 +269,14 @@ public class PlayerTest {
     }
 
     /**
-     * Should handle a differents effects
+     * Should handle different status effects and paralysis
      */
     @Test
     public void shouldHandleStatusEffectsAndParalysis() {
-       
         assertTrue(p.canMove());
         assertTrue(p.canJump());
         assertTrue(p.canKick());
         assertFalse(p.isParalyzed());
-        assertNull(p.getActiveEffect());
 
         p.takeDamage(200.0);
         assertTrue(p.isStunned());
@@ -271,9 +284,32 @@ public class PlayerTest {
         assertFalse(p.canMove());
         assertFalse(p.canJump());
         assertFalse(p.canKick());
-        
+
         p.paralyzeActions();
         assertEquals(0, p.getVelX(), 0.001);
+    }
+
+    /**
+     * Should preserve push velocity when horizontal input is received and return identification and facing direction
+     */
+    @Test
+    public void shouldKeepPushVelocityOnMoveInputAndReturnDirectionAndIdentification() {
+        Player player = new Player(200, 400, 90, 90);
+        player.setNationality(new SouthKorea());
+        player.resetForNewMatch(200, 400, 90, 90, true);
+
+        assertEquals("Corea del Sur", player.getIdentification());
+        assertEquals(1, player.getFacingDirection());
+
+        player.applyStatusEffect(new PushEffect());
+        double pushedVelX = player.getVelX();
+        assertTrue(pushedVelX < 0);
+
+        player.moveHorizontal(0);
+        assertEquals(pushedVelX, player.getVelX(), 0.01);
+
+        player.resetForNewMatch(700, 400, 90, 90, false);
+        assertEquals(-1, player.getFacingDirection());
     }
 
     /**
@@ -307,5 +343,4 @@ public class PlayerTest {
         p.resetAfterGoal(100, 100);
         assertTrue(p.isJumping());
     }
-
 }

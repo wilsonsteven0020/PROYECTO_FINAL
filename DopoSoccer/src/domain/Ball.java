@@ -12,6 +12,7 @@ public class Ball extends Entity{
 
     private boolean isFake;
     private double fakeTimer;
+    private String fakeSkinName;
     private boolean affectedByGravity;
     private boolean straightHorizontalShot;
     private double bounceFactor;
@@ -19,6 +20,7 @@ public class Ball extends Entity{
     private Player shooter;
     private double shooterGraceTimer;
     private double powerTriggerCooldown;
+    
 
     /**
      * Creates a new Ball
@@ -31,6 +33,7 @@ public class Ball extends Entity{
         super(posX, posY, width, height);
         this.isFake = false;
         this.fakeTimer = 0.0;
+        this.fakeSkinName = "Normal";
         this.affectedByGravity = true;
         this.straightHorizontalShot = false;
         this.bounceFactor = DEFAULT_BOUNCE;
@@ -140,11 +143,6 @@ public class Ball extends Entity{
         return shooter;
     }
 
-    @Override
-    public boolean isMachine(){
-        return false;
-    }
-
     /**
      * Updates the ball's movement, timers and boundary collisions
      * @param dt time step in seconds
@@ -222,12 +220,19 @@ public class Ball extends Entity{
     }
 
     /**
-     * Configures this ball as a temporary fake illusion ball
+     * Configures this ball as a temporary fake illusion ball with a specific skin
      * @param duration lifetime in seconds
+     * @param skinName skin identifier for the fake ball
      */
-    public void setFakeBall(double duration){
+    public void setFakeBall(double duration, String skinName){
         this.isFake = true;
         this.fakeTimer = duration;
+        if(skinName != null){
+            this.fakeSkinName = skinName;
+        }
+        else{
+            this.fakeSkinName = "Normal";
+        }
     }
 
     /**
@@ -239,14 +244,6 @@ public class Ball extends Entity{
     }
 
     /**
-     * Sets whether this ball is fake
-     * @param isFake true if fake
-     */
-    public void setFake(boolean isFake){
-        this.isFake = isFake;
-    }
-
-    /**
      * Indicates if a fake ball's duration has expired
      * @return true if fake and expired
      */
@@ -255,38 +252,20 @@ public class Ball extends Entity{
     }
 
     /**
-     * Indicates if the ball is affected by gravity
-     * @return true if affected by gravity
-     */
-    public boolean isAffectedByGravity(){
-        return affectedByGravity;
-    }
-
-    /**
-     * Sets whether the ball is affected by gravity
-     * @param affectedByGravity true to enable gravity
-     */
-    public void setAffectedByGravity(boolean affectedByGravity){
-        this.affectedByGravity = affectedByGravity;
-    }
-
-    /**
      * Returns the skin identifier for this ball based on its active power or illusion state
-     * @return country name if a power skin applies, or "Normal" otherwise
+     * @return skin identifier if a power or illusion skin applies, or "Normal" otherwise
      */
     public String getSkinName(){
         if(isFake){
-            return "Estados Unidos";
+            return fakeSkinName;
         }
         else if(hasActivePower()){
-            String country = activePower.getCountryName();
-            if("Estados Unidos".equals(country)){
-                return "Normal";
-            }
-            return country;
+            return activePower.getBallSkinName();
         }
         else{
             return "Normal";
         }
     }
+
+    
 }

@@ -4,11 +4,10 @@ import domain.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
-
 public class NationalityTest {
 
     /**
-     * Should calculate the powe damage and aplly in electrocuted effect 
+     * Should calculate Cameroon power damage and apply electrocuted effect on rival impact
      */
     @Test
     public void shouldCalculateCameroonPowerDamageAndApplyElectrocutedEffect() throws DopoSoccerException {
@@ -37,13 +36,14 @@ public class NationalityTest {
         match.updateEnvironment(0.01);
 
         assertEquals(36.0, p2.getCurrentHealth(), 0.01);
-        assertNotNull(p2.getActiveEffect());
-        assertEquals("Electrocutado", p2.getActiveEffect().getEffectName());
         assertFalse(p2.canJump());
+        assertTrue(p2.canMove());
+        assertTrue(p2.canKick());
+        assertEquals(130.0, p2.getEffectiveSpeed(), 0.01);
     }
 
     /**
-     * Should verifies South Korea's power shot travels horizontally without gravity and pushes the rival toward their own goal
+     * Should verify South Korea's power shot travels horizontally without gravity and pushes the rival toward their own goal
      */
     @Test
     public void shouldExecuteSouthKoreaHorizontalShotAndPushRivalTowardOwnGoal() {
@@ -56,17 +56,22 @@ public class NationalityTest {
         Ball ball = match.getBalls().get(0);
         p1.getNationality().executePowerShot(ball, p1, match);
 
-        assertFalse(ball.isAffectedByGravity());
+        assertTrue(ball.isStraightHorizontalShot());
+        assertEquals("Corea del Sur", ball.getSkinName());
         assertEquals(0.0, ball.getVelY(), 0.01);
         assertTrue(ball.getVelX() > 0);
 
         StatusEffect push = p1.getNationality().createStatusEffect();
         p2.applyStatusEffect(push);
+        assertFalse(p2.canMove());
+        assertTrue(p2.getVelX() > 0);
+
+        p2.moveHorizontal(-1);
         assertTrue(p2.getVelX() > 0);
     }
 
     /**
-     * Should verifies Nigeria's Tornado power shot launches the rival into the air and paralyzes them for 3 seconds
+     * Should verify Nigeria's Tornado power shot launches the rival into the air and paralyzes them for 3 seconds
      */
     @Test
     public void shouldLaunchAndParalyzeRivalWithNigeriaUnconsciousEffect() {
@@ -87,7 +92,7 @@ public class NationalityTest {
     }
 
     /**
-     * Should verifies United States' Illusion power shot splits the ball into 8 balls (1 real and 7 fake)
+     * Should verify United States' Illusion power shot splits the ball into 8 balls (1 real and 7 fake)
      */
     @Test
     public void shouldSplitIntoEightBallsWhenUnitedStatesExecutesPowerShot() {
@@ -107,9 +112,11 @@ public class NationalityTest {
         for(Ball b : match.getBalls()){
             if(b.isFake()){
                 fakeCount++;
+                assertEquals("Estados Unidos", b.getSkinName());
             }
             else{
                 realCount++;
+                assertEquals("Normal", b.getSkinName());
             }
         }
         assertEquals(1, realCount);
@@ -137,8 +144,11 @@ public class NationalityTest {
         match.updateEnvironment(0.01);
 
         assertEquals(p2.getMaxHealth() - p1.getNationality().calculatePowerDamage(p1), p2.getCurrentHealth(), 0.01);
-        assertNotNull(p2.getActiveEffect());
-        assertEquals("Inconsciente", p2.getActiveEffect().getEffectName());
+        assertTrue(p2.isParalyzed());
+        assertFalse(p2.canMove());
+        assertFalse(p2.canJump());
+        assertFalse(p2.canKick());
+        assertEquals("Paralizado", p2.getSpriteState());
     }
 
     /**
@@ -156,16 +166,17 @@ public class NationalityTest {
         assertNotNull(confusion);
         p2.applyStatusEffect(confusion);
 
-        assertNotNull(p2.getActiveEffect());
-        assertNotNull(p2.getActiveEffect().getEffectName());
+        assertFalse(confusion.isExpired());
         assertTrue(p2.canMove());
         p2.moveHorizontal(1);
 
         p2.updateState(1.0, 0, 1000, 490, 100);
-        assertNotNull(p2.getActiveEffect());
+        assertFalse(confusion.isExpired());
+        assertEquals(1.5, confusion.getRemainingDuration(), 0.01);
 
         p2.updateState(2.0, 0, 1000, 490, 100);
-        assertNull(p2.getActiveEffect());
+        assertTrue(confusion.isExpired());
+        assertEquals(0.0, confusion.getRemainingDuration(), 0.01);
     }
 
     /**
@@ -182,13 +193,17 @@ public class NationalityTest {
             new Nigeria().createStatusEffect()
         };
 
-        for (StatusEffect effect : effects) {
+        for(StatusEffect effect : effects){
             target.applyStatusEffect(effect);
-            assertNotNull(target.getActiveEffect());
+            assertFalse(effect.isExpired());
             target.updateState(0.5, 0, 1000, 490, 100);
-            assertNotNull(target.getActiveEffect());
+            assertFalse(effect.isExpired());
             target.updateState(3.5, 0, 1000, 490, 100);
-            assertNull(target.getActiveEffect());
+            assertTrue(effect.isExpired());
+            assertTrue(target.canMove());
+            assertTrue(target.canJump());
+            assertTrue(target.canKick());
+            assertFalse(target.isParalyzed());
         }
     }
 
@@ -211,22 +226,24 @@ public class NationalityTest {
         leftPlayer.updateState(1.0, 0, 1000, 490, 100);
         assertEquals(1.5, confusion.getRemainingDuration(), 0.01);
 
-        // PushEffect sobre jugador izquierdo (facingRight == true) lo empuja a la izquierda
+        // PushEffect on left player (facingRight == true) pushes to the left
         StatusEffect push = new SouthKorea().createStatusEffect();
         leftPlayer.applyStatusEffect(push);
         assertFalse(leftPlayer.canMove());
         assertTrue(leftPlayer.getVelX() < 0);
 
-        // ElectrocutedEffect reduce velocidad al moverse
+        // ElectrocutedEffect reduces speed when moving
         StatusEffect electrocuted = new Cameroon().createStatusEffect();
         leftPlayer.applyStatusEffect(electrocuted);
         leftPlayer.moveHorizontal(1);
         assertTrue(leftPlayer.getVelX() > 0);
         assertEquals(0.5, electrocuted.getSpeedMultiplier(), 0.01);
 
-        // Consultar metadatos de Nationality
+        // Nationality metadata and delegated ball skins
         Nationality korea = new SouthKorea();
         assertEquals("Aura Azul", korea.getPowerName());
         assertEquals(40.0, korea.getBasePowerDamage(), 0.01);
+        assertEquals("Corea del Sur", korea.getBallSkinName());
+        assertEquals("Normal", new UnitedStates().getBallSkinName());
     }
 }

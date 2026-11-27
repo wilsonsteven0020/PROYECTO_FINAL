@@ -19,7 +19,6 @@ public class DopoSoccer implements Serializable{
         players.add(new Player(1,0,1,1));
         players.add(new Player(3,0,1,1));
         nationalities = new HashMap<>();
-        nationalities.put("Corea del Sur", new SouthKorea());
         nationalities.put("Corea Del Sur", new SouthKorea());
         nationalities.put("Camerún", new Cameroon());
         nationalities.put("Nigeria", new Nigeria());
@@ -78,15 +77,6 @@ public class DopoSoccer implements Serializable{
      */
     public int getPlayerPoints(int playerNum){
         return players.get(playerNum).getPoints();
-    }
-
-    /**
-     * Gives points to an specific player
-     * @param playerNum is the num of the player (Player number 1 is with 0).
-     * @param points are the number of points that will be given
-     */
-    public void givePoints(int playerNum, int points){
-        players.get(playerNum).givePoints(points);
     }
 
     /**
@@ -251,8 +241,8 @@ public class DopoSoccer implements Serializable{
      */
     public String[] getPlayersNationalities(){
         String[] nationalities = new String[2];
-        nationalities[0] = getMatchPlayer(0).getIdentificaction();
-        nationalities[1] = getMatchPlayer(1).getIdentificaction();
+        nationalities[0] = getMatchPlayer(0).getIdentification();
+        nationalities[1] = getMatchPlayer(1).getIdentification();
         return nationalities;
     }
 
@@ -358,21 +348,6 @@ public class DopoSoccer implements Serializable{
         };
     }
 
-    /**
-     * Returns [x, y, width, height] for the main ball
-     */
-    public int[] getBallBounds(){
-        if(currentMatch == null || currentMatch.getBalls().isEmpty()){
-            return new int[]{0, 0, 36, 36};
-        }
-        Ball b = currentMatch.getBalls().get(0);
-        return new int[]{
-            (int) Math.round(b.getPosX()),
-            (int) Math.round(b.getPosY()),
-            b.getWidth(),
-            b.getHeight()
-        };
-    }
 
     /**
      * Indicates if the current match already has a winner

@@ -11,7 +11,7 @@ public class PushEffect extends StatusEffect {
      * Creates a new PushEffect with a duration of 1.5 seconds
      */
     public PushEffect(){
-        super("Empuje", 1.5);
+        super(1.5);
     }
 
     /**
@@ -48,11 +48,6 @@ public class PushEffect extends StatusEffect {
      */
     private void pushTowardOwnGoal(Player target){
         double scaledSpeed = PUSH_SPEED * target.getScale();
-        if(target.isFacingRight()){
-            target.setVelX(-scaledSpeed);
-        }
-        else{
-            target.setVelX(scaledSpeed);
-        }
+        target.setVelX(-target.getFacingDirection() * scaledSpeed);
     }
 }

@@ -72,6 +72,22 @@ public abstract class Entity implements Serializable{
     }
 
     /**
+     * Returns the horizontal center of the collision box
+     * @return hitbox center X
+     */
+    public double getHitboxCenterX(){
+        return getHitboxX() + getHitboxWidth() / 2.0;
+    }
+
+    /**
+     * Returns the vertical center of the collision box
+     * @return hitbox center Y
+     */
+    public double getHitboxCenterY(){
+        return getHitboxY() + getHitboxHeight() / 2.0;
+    }
+
+    /**
      * Checks if this entity collides with another entity in 2D using their hitboxes
      * @param other the other entity
      * @return true if their hitboxes intersect
@@ -139,11 +155,5 @@ public abstract class Entity implements Serializable{
     public void setScale(double scale){
         this.scale = scale;
     }
-
-    /**
-     * Returns if it is a machine
-     * @return if it is a machine
-     */
-    public abstract boolean isMachine();
 
 }

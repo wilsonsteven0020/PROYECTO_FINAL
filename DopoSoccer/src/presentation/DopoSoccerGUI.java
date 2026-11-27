@@ -99,6 +99,7 @@ public class DopoSoccerGUI extends JFrame{
         playSoccerPanel.getPausePanel().getSaveButton().addActionListener(e -> saveAction());
         playSoccerPanel.getPausePanel().getOpenButton().addActionListener(e -> openAction());
         playSoccerPanel.getPausePanel().getExitButton().addActionListener(e -> exitMatchAction());
+        playSoccerPanel.getMatchResultPanel().getContinueButton().addActionListener(e -> continueAfterMatchAction());
         playSoccerPanel.addKeyListener(new KeyAdapter(){
             @Override
             public void keyPressed(KeyEvent e){
@@ -115,7 +116,7 @@ public class DopoSoccerGUI extends JFrame{
     }
 
     private void handleKeyPressed(KeyEvent e){
-        if(playSoccerPanel.isInAnimation()){
+        if(playSoccerPanel.isInAnimation() || playSoccerPanel.isShowingMatchResult()){
             return;
         }
         int code = e.getKeyCode();
@@ -204,7 +205,7 @@ public class DopoSoccerGUI extends JFrame{
     }
 
     private void pauseMatchAction(){
-        if(playSoccerPanel.isInAnimation()){
+        if(playSoccerPanel.isInAnimation() || playSoccerPanel.isShowingMatchResult()){
             return;
         }
         dopoSoccer.toggleMatchPause();
@@ -226,8 +227,15 @@ public class DopoSoccerGUI extends JFrame{
         changeToSelectCharacterAction();
     }
 
+    private void continueAfterMatchAction(){
+        playSoccerPanel.hideMatchResult();
+        dopoSoccer.clearCurrentMatch();
+        refreshStorePanels();
+        changeToSelectCharacterAction();
+    }
+
     private void updateMatchAction(){
-        if(playSoccerPanel.isInAnimation()){
+        if(playSoccerPanel.isInAnimation() || playSoccerPanel.isShowingMatchResult()){
             return;
         }
         dopoSoccer.updateMatch(0.02);
@@ -256,19 +264,25 @@ public class DopoSoccerGUI extends JFrame{
 
         if(dopoSoccer.isCurrentMatchFinished()){
             matchTimer.stop();
-            int winnerNum = dopoSoccer.getCurrentMatchWinner();
-            firstPlayerStorePanel.setPointsText("Puntos: " + getPlayerPoints(0));
-            secondPlayerStorePanel.setPointsText("Puntos: " + getPlayerPoints(1));
+            p1LeftPressed = false;
+            p1RightPressed = false;
+            p2LeftPressed = false;
+            p2RightPressed = false;
 
+            int winnerNum = dopoSoccer.getCurrentMatchWinner();
+            refreshStorePanels();
+
+            String winnerText;
+            String pointsText;
             if(dopoSoccer.isRightPlayerMachine()){
-                String message;
                 if(winnerNum == 0){
-                    message = "¡Ganó el Jugador 1!\nJugador 1: +100 puntos (Total: " + getPlayerPoints(0) + ")";
+                    winnerText = "¡Ganó el Jugador 1!";
+                    pointsText = "Jugador 1: +100 puntos (Total: " + getPlayerPoints(0) + ")";
                 }
                 else{
-                    message = "¡Ganó la Máquina (" + dopoSoccer.getCurrentMachineProfileName() + ")!\nJugador 1: +25 puntos (Total: " + getPlayerPoints(0) + ")";
+                    winnerText = "¡Ganó la Máquina (" + dopoSoccer.getCurrentMachineProfileName() + ")!";
+                    pointsText = "Jugador 1: +25 puntos (Total: " + getPlayerPoints(0) + ")";
                 }
-                createJOptionPaneMessage(message, "Fin del Partido", JOptionPane.INFORMATION_MESSAGE);
             }
             else{
                 int loserNum;
@@ -278,17 +292,20 @@ public class DopoSoccerGUI extends JFrame{
                 else{
                     loserNum = 0;
                 }
-                createJOptionPaneMessage(
-                    "¡Ganó el Jugador " + (winnerNum + 1) + "!\n" +
-                    "Jugador " + (winnerNum + 1) + ": +100 puntos (Total: " + getPlayerPoints(winnerNum) + ")\n" +
-                    "Jugador " + (loserNum + 1) + ": +25 puntos (Total: " + getPlayerPoints(loserNum) + ")",
-                    "Fin del Partido",
-                    JOptionPane.INFORMATION_MESSAGE
-                );
+                winnerText = "¡Ganó el Jugador " + (winnerNum + 1) + "!";
+                pointsText = "<html><div style='text-align: center;'>"
+                    + "Jugador " + (winnerNum + 1) + ": +100 pts (Total: " + getPlayerPoints(winnerNum) + ")<br>"
+                    + "Jugador " + (loserNum + 1) + ": +25 pts (Total: " + getPlayerPoints(loserNum) + ")"
+                    + "</div></html>";
             }
-            dopoSoccer.clearCurrentMatch();
-            refreshStorePanels();
-            changeToSelectCharacterAction();
+
+            playSoccerPanel.showMatchResult(
+                dopoSoccer.getPlayersNationalities(),
+                dopoSoccer.getPlayersGoalsNumber(),
+                winnerNum,
+                winnerText,
+                pointsText
+            );
         }
     }
 
@@ -303,7 +320,6 @@ public class DopoSoccerGUI extends JFrame{
         playSoccerPanel.updateEntitiesAndScore(
             dopoSoccer.getPlayerBounds(0),
             dopoSoccer.getPlayerBounds(1),
-            dopoSoccer.getBallBounds(),
             dopoSoccer.getPlayersSpriteStates(),
             dopoSoccer.getPlayersGoalsNumber()
         );
@@ -428,8 +444,7 @@ public class DopoSoccerGUI extends JFrame{
         JOptionPane.showMessageDialog(this, message);
     }
 
-
-private void prepareControllerMenuPanel(){
+    private void prepareControllerMenuPanel(){
         menuPanel.getStartButton().addActionListener(e -> changeToSelectionGameModeAction());
         menuPanel.getOpenButton().addActionListener(e -> openAction());
         menuPanel.getSaveButton().addActionListener(e -> saveAction());
@@ -544,6 +559,7 @@ private void prepareControllerMenuPanel(){
 
         playSoccerPanel.showPauseMenu(true);
     }
+
     /**
      * Changes to menu
      */
@@ -568,6 +584,7 @@ private void prepareControllerMenuPanel(){
         setSize(PREFERRED_DIMENSION_MEDIUM);
         setLocationRelativeTo(null);
     }
+
     /**
      * Changes to SelectCharacter
      */
@@ -684,7 +701,6 @@ private void prepareControllerMenuPanel(){
             }
         );
     }
-
 
     /**
      * Sets the screenSize

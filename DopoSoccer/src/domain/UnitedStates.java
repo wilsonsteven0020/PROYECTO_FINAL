@@ -20,17 +20,11 @@ public class UnitedStates extends Nationality {
      */
     @Override
     public void executePowerShot(Ball ball, Player shooter, Match match){
-        int dir;
-        if(shooter.isFacingRight()){
-            dir = 1;
-        }
-        else{
-            dir = -1;
-        }
+        int dir = shooter.getFacingDirection();
         ball.activatePowerShot(this, shooter, true, 0.80);
         ball.setVelX(dir * 560.0);
         ball.setVelY(-380.0);
-        match.spawnIllusionBalls(ball, dir, 7, 2.5);
+        match.spawnIllusionBalls(ball, dir, 7, 2.5, getCountryName());
     }
 
     /**
@@ -40,5 +34,14 @@ public class UnitedStates extends Nationality {
     @Override
     public StatusEffect createStatusEffect(){
         return new ConfusionEffect();
+    }
+
+    /**
+     * Keeps the real ball with the normal skin while illusion clones show the country skin
+     * @return "Normal"
+     */
+    @Override
+    public String getBallSkinName(){
+        return "Normal";
     }
 }

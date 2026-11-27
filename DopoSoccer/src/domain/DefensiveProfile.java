@@ -26,8 +26,8 @@ public class DefensiveProfile implements MachineProfile {
             double targetX = getAttackPositionX(machine, targetBall);
             moveTowardX(machine, targetX);
 
-            double ballCenterX = targetBall.getHitboxX() + targetBall.getHitboxWidth() / 2.0;
-            double machineCenterX = machine.getHitboxX() + machine.getHitboxWidth() / 2.0;
+            double ballCenterX = targetBall.getHitboxCenterX();
+            double machineCenterX = machine.getHitboxCenterX();
             if(machine.getPowerBar() >= 100.0 && !machine.hasActiveAura() && Math.abs(ballCenterX - machineCenterX) < 160.0 * machine.getScale()){
                 machine.activatePower();
             }

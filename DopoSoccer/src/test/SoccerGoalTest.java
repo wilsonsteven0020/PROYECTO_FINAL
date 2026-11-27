@@ -4,24 +4,30 @@ import domain.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
-
 public class SoccerGoalTest {
 
     /**
-     * Should verifies that a ball inside the goal mouth below the crossbar is detected as a goal, while one on the roof is not
+     * Should verify that a ball inside the goal mouth below the crossbar is detected as a goal, while one on the roof is not
      */
     @Test
     public void shouldDetectGoalOnlyWhenBallIsBelowCrossbarAndDeepInside() {
         SoccerGoal leftGoal = new SoccerGoal("LEFT", 0, 340, 52, 148);
-        Ball ball = new Ball(5, 400, 35, 35);
+        Ball leftBall = new Ball(5, 400, 35, 35);
 
-        assertTrue(leftGoal.isInsideSoccerGoal(ball));
-        ball.setPosY(325);
-        assertFalse(leftGoal.isInsideSoccerGoal(ball));
+        assertTrue(leftGoal.isInsideSoccerGoal(leftBall));
+        leftBall.setPosY(325);
+        assertFalse(leftGoal.isInsideSoccerGoal(leftBall));
+
+        SoccerGoal rightGoal = new SoccerGoal("RIGHT", 950, 340, 52, 148);
+        Ball rightBall = new Ball(965, 400, 35, 35);
+
+        assertTrue(rightGoal.isInsideSoccerGoal(rightBall));
+        rightBall.setPosY(325);
+        assertFalse(rightGoal.isInsideSoccerGoal(rightBall));
     }
 
     /**
-     * Should verifies that a ball falling onto the top crossbar bounces upward
+     * Should verify that a ball falling onto the top crossbar bounces upward
      */
     @Test
     public void shouldBounceBallUpwardWhenHittingTopCrossbar() {
@@ -36,7 +42,7 @@ public class SoccerGoalTest {
     }
 
     /**
-     * Should v erifies that a player positioned above the goal can stand on top of the crossbar
+     * Should verify that a player positioned above the goal can stand on top of the crossbar
      */
     @Test
     public void shouldAllowPlayerToStandOnTopOfGoalWhenAboveCrossbar() {
@@ -48,18 +54,6 @@ public class SoccerGoalTest {
         player.setPosY(400);
         assertFalse(leftGoal.canPlayerStandOnTop(player));
     }
-    /**
-     * Should return goal side and identify that goal is not a machine
-     */
-    @Test
-    public void shouldReturnGoalSideAndNotBeMachine() {
-        SoccerGoal leftGoal = new SoccerGoal("LEFT", 0, 340, 52, 148);
-        SoccerGoal rightGoal = new SoccerGoal("RIGHT", 950, 340, 52, 148);
-
-        assertEquals("LEFT", leftGoal.getSide());
-        assertEquals("RIGHT", rightGoal.getSide());
-        assertFalse(leftGoal.isMachine());
-    }
 
     /**
      * Should bounce power shots off top crossbar roof and front edge on both goals
@@ -70,7 +64,7 @@ public class SoccerGoalTest {
         SoccerGoal rightGoal = new SoccerGoal("RIGHT", 950, 340, 52, 148);
         Player shooter = new Player(100, 400, 90, 90);
 
-        // Tiro horizontal recto (Corea del Sur) golpeando techo del arco
+        // Straight horizontal shot (South Korea) hitting goal roof
         Ball straightBall = new Ball(955, 315, 35, 35);
         straightBall.activatePowerShot(new SouthKorea(), shooter, false, 0.75);
         straightBall.setVelY(0.0);
@@ -78,7 +72,7 @@ public class SoccerGoalTest {
         assertFalse(straightBall.hasActivePower());
         assertEquals(-180.0, straightBall.getVelY(), 0.01);
 
-        // Tiro con poder no recto (Nigeria) golpeando techo del arco
+        // Curved power shot (Nigeria) hitting goal roof
         Ball curvePowerBall = new Ball(955, 315, 35, 35);
         curvePowerBall.activatePowerShot(new Nigeria(), shooter, true, 1.05);
         curvePowerBall.setVelY(200.0);
@@ -86,7 +80,7 @@ public class SoccerGoalTest {
         assertFalse(curvePowerBall.hasActivePower());
         assertTrue(curvePowerBall.getVelY() < 0);
 
-        // Borde frontal del arco izquierdo con tiro de poder activo
+        // Front edge of left goal with active power shot
         Ball frontLeftBall = new Ball(30, 330, 35, 35);
         frontLeftBall.activatePowerShot(new Cameroon(), shooter, false, 0.75);
         frontLeftBall.setVelX(-100.0);
@@ -95,14 +89,14 @@ public class SoccerGoalTest {
         assertEquals(52.0, frontLeftBall.getPosX(), 0.01);
         assertTrue(frontLeftBall.getVelX() >= 200.0);
 
-        // Borde frontal del arco derecho
+        // Front edge of right goal
         Ball frontRightBall = new Ball(935, 330, 35, 35);
         frontRightBall.setVelX(300.0);
         rightGoal.bounceCrossbar(frontRightBall);
         assertEquals(950.0 - 35.0, frontRightBall.getPosX(), 0.01);
         assertTrue(frontRightBall.getVelX() <= -200.0);
 
-        // Balón debajo del travesaño entrando al arco: no rebota
+        // Ball entering below the crossbar does not bounce
         Ball insideBall = new Ball(10, 400, 35, 35);
         insideBall.setVelX(-150.0);
         leftGoal.bounceCrossbar(insideBall);

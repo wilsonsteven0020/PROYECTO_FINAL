@@ -6,16 +6,13 @@ import java.io.Serializable;
  */
 public abstract class StatusEffect implements Serializable{
 
-    protected String effectName;
-    protected double remainingDuration;
+    private double remainingDuration;
 
     /**
      * Creates a new StatusEffect
-     * @param effectName name of the effect
      * @param duration duration in seconds
      */
-    public StatusEffect(String effectName, double duration){
-        this.effectName = effectName;
+    public StatusEffect(double duration){
         this.remainingDuration = duration;
     }
 
@@ -69,14 +66,6 @@ public abstract class StatusEffect implements Serializable{
      */
     public double getSpeedMultiplier(){
         return 1.0;
-    }
-
-    /**
-     * Returns the name of the status effect
-     * @return effect name
-     */
-    public String getEffectName(){
-        return effectName;
     }
 
     /**

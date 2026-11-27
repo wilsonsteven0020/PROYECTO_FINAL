@@ -11,7 +11,7 @@ public class UnconsciousEffect extends StatusEffect {
      * Creates a new UnconsciousEffect with a duration of 3.0 seconds
      */
     public UnconsciousEffect(){
-        super("Inconsciente", 3.0);
+        super(3.0);
     }
 
     /**

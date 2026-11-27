@@ -68,4 +68,12 @@ public abstract class Nationality implements Serializable{
      * @return the status effect to apply on the rival
      */
     public abstract StatusEffect createStatusEffect();
+
+    /**
+     * Returns the ball skin identifier used during this nationality's power shot
+     * @return ball skin name
+     */
+    public String getBallSkinName(){
+        return countryName;
+    }
 }

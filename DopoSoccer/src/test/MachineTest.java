@@ -18,21 +18,18 @@ public class MachineTest {
     }
 
     /**
-     * Should identify machine player and allow changing its profile
+     * Should identify machine players and copy base player nationality
      */
     @Test
-    public void shouldAssignAndChangeMachineProfiles() {
-        MachineProfile offensive = new OffensiveProfile();
-        MachineProfile defensive = new DefensiveProfile();
-        MachinePlayer machine = new MachinePlayer(basePlayer, offensive);
+    public void shouldIdentifyMachinePlayerAndCopyBaseNationality() {
+        MachinePlayer offensiveMachine = new MachinePlayer(basePlayer, new OffensiveProfile());
+        MachinePlayer defensiveMachine = new MachinePlayer(basePlayer, new DefensiveProfile());
 
-        assertTrue(machine.isMachine());
+        assertTrue(offensiveMachine.isMachine());
+        assertTrue(defensiveMachine.isMachine());
         assertFalse(rival.isMachine());
-        assertEquals(offensive, machine.getProfile());
-        assertEquals(basePlayer.getNationality(), machine.getNationality());
-
-        machine.setProfile(defensive);
-        assertEquals(defensive, machine.getProfile());
+        assertEquals(basePlayer.getNationality(), offensiveMachine.getNationality());
+        assertEquals(basePlayer.getNationality(), defensiveMachine.getNationality());
     }
 
     /**
@@ -40,17 +37,18 @@ public class MachineTest {
      */
     @Test
     public void shouldNotExecuteAIWhenProfileIsNullOrMachineIsStunned() {
-        MachinePlayer machine = new MachinePlayer(basePlayer, null);
-        Match match = new Match(rival, machine, true, 5, 1024, 576);
+        MachinePlayer nullProfileMachine = new MachinePlayer(basePlayer, null);
+        Match nullProfileMatch = new Match(rival, nullProfileMachine, true, 5, 1024, 576);
 
-        machine.executeMachine(match, 0.5);
-        assertEquals(0.0, machine.getVelX(), 0.001);
+        nullProfileMachine.executeMachine(nullProfileMatch, 0.5);
+        assertEquals(0.0, nullProfileMachine.getVelX(), 0.001);
 
-        machine.setProfile(new OffensiveProfile());
-        machine.takeDamage(500.0);
-        assertTrue(machine.isStunned());
-        machine.executeMachine(match, 0.5);
-        assertEquals(0.0, machine.getVelX(), 0.001);
+        MachinePlayer stunnedMachine = new MachinePlayer(basePlayer, new OffensiveProfile());
+        Match stunnedMatch = new Match(rival, stunnedMachine, true, 5, 1024, 576);
+        stunnedMachine.takeDamage(500.0);
+        assertTrue(stunnedMachine.isStunned());
+        stunnedMachine.executeMachine(stunnedMatch, 0.5);
+        assertEquals(0.0, stunnedMachine.getVelX(), 0.001);
     }
 
     /**
@@ -62,12 +60,12 @@ public class MachineTest {
         Match match = new Match(rival, machine, true, 5, 1024, 576);
         machine.chargePowerBar(100.0);
 
-        for (int i = 0; i < 60; i++) {
+        for(int i = 0; i < 60; i++){
             machine.executeMachine(match, 0.25);
             match.updateEnvironment(0.02);
         }
 
-        assertTrue(machine.getProfile() instanceof ClumsyProfile);
+        assertTrue(machine.isMachine());
         assertTrue(machine.getPosX() >= 0 && machine.getPosX() <= match.getFieldWidth());
     }
 
@@ -89,11 +87,12 @@ public class MachineTest {
         assertTrue(machine.hasActiveAura());
         assertTrue(machine.getVelX() < 0);
 
-        // Balón a la derecha y cerca en rango de patada
+        // Ball close in kick range while machine has aura active triggers power shot
         ball.setPosX(machine.getPosX() + 40);
         ball.setPosY(machine.getPosY());
         machine.executeMachine(match, 0.2);
-        assertNotNull(machine.getProfile());
+        assertFalse(machine.hasActiveAura());
+        assertTrue(ball.hasActivePower());
     }
 
     /**
@@ -105,20 +104,20 @@ public class MachineTest {
         Match match = new Match(rival, rightMachine, true, 5, 1024, 576);
         Ball ball = match.getBalls().get(0);
 
-        // Balón en mitad rival: debe regresar hacia su propio arco (derecha)
+        // Ball in rival half: return toward own goal (right)
         rightMachine.setPosX(500);
         ball.setPosX(150);
         rightMachine.executeMachine(match, 0.2);
         assertTrue(rightMachine.getVelX() > 0);
 
-        // Balón en su propia mitad y alto: debe ir hacia el balón e intentar despejar
+        // Ball in own half and high: move toward ball and attempt to clear
         rightMachine.setPosX(850);
         ball.setPosX(750);
         ball.setPosY(rightMachine.getPosY() - 50);
         rightMachine.executeMachine(match, 0.2);
         assertTrue(rightMachine.getVelX() < 0);
 
-        // Probar perfil defensivo también en el lado izquierdo
+        // Also test defensive profile on the left side
         MachinePlayer leftMachine = new MachinePlayer(rival, new DefensiveProfile());
         Match leftMatch = new Match(leftMachine, basePlayer, true, 5, 1024, 576);
         Ball leftBall = leftMatch.getBalls().get(0);
@@ -127,7 +126,8 @@ public class MachineTest {
         leftMachine.executeMachine(leftMatch, 0.2);
         assertTrue(leftMachine.getVelX() < 0);
     }
-/**
+
+    /**
      * Should expert profile switch between offensive and defensive behavior depending on match state
      */
     @Test
@@ -137,7 +137,7 @@ public class MachineTest {
         Ball ball = match.getBalls().get(0);
         double groundBallY = match.getGroundY() - ball.getHeight();
 
-        // 1. Empatados y máquina más cerca del balón en mitad rival: actúa ofensivo
+        // 1. Tied and machine closer to ball in rival half: acts offensively
         rival.setPosX(50);
         ball.setPosX(350);
         ball.setPosY(groundBallY);
@@ -145,7 +145,7 @@ public class MachineTest {
         machine.executeMachine(match, 0.2);
         assertTrue(machine.getVelX() < 0);
 
-        // 2. Va ganando y el rival activa aura: prioriza defensa aunque esté más cerca
+        // 2. Leading and rival activates aura: prioritizes defense even if closer
         machine.addGoal();
         rival.chargePowerBar(100.0);
         rival.activatePower();
@@ -155,7 +155,7 @@ public class MachineTest {
         machine.executeMachine(match, 0.2);
         assertTrue(machine.getVelX() > 0);
 
-        // 3. Va perdiendo: ataca aunque el rival esté más cerca del balón
+        // 3. Trailing: attacks even if rival is closer to the ball
         rival.addGoal();
         rival.addGoal();
         rival.setPosX(280);
@@ -165,7 +165,7 @@ public class MachineTest {
         machine.executeMachine(match, 0.2);
         assertTrue(machine.getVelX() < 0);
 
-        // 4. Empatados, balón detrás de la máquina en mitad rival y rival más cerca: retrocede a cuidar arco
+        // 4. Tied, ball behind machine in rival half and rival closer: retreats to guard goal
         machine.addGoal();
         machine.setPosX(250);
         ball.setPosX(420);
@@ -174,7 +174,7 @@ public class MachineTest {
         machine.executeMachine(match, 0.2);
         assertTrue(machine.getVelX() > 0);
 
-        // 5. Balón en propia mitad: delega al perfil defensivo para despejar
+        // 5. Ball in own half: delegates to defensive profile to clear
         machine.setPosX(800);
         ball.setPosX(650);
         ball.setPosY(groundBallY);
@@ -198,7 +198,7 @@ public class MachineTest {
         rightMachine.executeMachine(match, 0.05);
         assertTrue(rightMachine.getVelY() < 0);
 
-        // Probar esquiva también jugando en el lado izquierdo
+        // Also test dodging from the left side
         MachinePlayer leftMachine = new MachinePlayer(rival, new ExpertProfile());
         Match leftMatch = new Match(leftMachine, basePlayer, true, 5, 1024, 576);
         Ball leftBall = leftMatch.getBalls().get(0);
@@ -220,14 +220,14 @@ public class MachineTest {
         Match match = new Match(rival, rightMachine, true, 5, 1024, 576);
         Ball ball = match.getBalls().get(0);
 
-        // 1. Balón alto cerca del arco rival: debe retroceder hacia la derecha
+        // 1. High ball near rival goal: should retreat to the right
         rightMachine.setPosX(120);
         ball.setPosX(80);
         ball.setPosY(200);
         rightMachine.executeMachine(match, 0.2);
         assertTrue(rightMachine.getVelX() > 0);
 
-        // 2. Balón aéreo en mitad de cancha: debe saltar
+        // 2. Aerial ball in midfield: should jump
         rightMachine.setPosX(550);
         rightMachine.setPosY(match.getGroundY() - rightMachine.getHeight());
         ball.setPosX(540);
@@ -235,13 +235,13 @@ public class MachineTest {
         rightMachine.executeMachine(match, 0.2);
         assertTrue(rightMachine.getVelY() < 0);
 
-        // 3. Múltiples balones (ilusiones de EE. UU.): selecciona el balón más cercano
+        // 3. Multiple balls (US illusions): selects closest ball
         rival.setNationality(new UnitedStates());
         rival.getNationality().executePowerShot(ball, rival, match);
         assertEquals(8, match.getBalls().size());
         rightMachine.executeMachine(match, 0.2);
 
-        // 4. Lado izquierdo: retroceso en arco derecho y patada al rival cuando el balón está lejos
+        // 4. Left side: retreat near right goal and kick rival when ball is far
         MachinePlayer leftMachine = new MachinePlayer(rival, new OffensiveProfile());
         Match leftMatch = new Match(leftMachine, basePlayer, true, 5, 1024, 576);
         Ball leftBall = leftMatch.getBalls().get(0);
@@ -262,10 +262,18 @@ public class MachineTest {
         leftMachine.executeMachine(leftMatch, 0.2);
         assertTrue(basePlayer.getCurrentHealth() < initialRivalHealth);
 
-        // 5. Sin balones en cancha: retorna sin lanzar excepción
+        // 5. No balls on field: profiles return safely without throwing exceptions
         leftMatch.getBalls().clear();
         leftMachine.executeMachine(leftMatch, 0.2);
-        leftMachine.setProfile(new ExpertProfile());
-        leftMachine.executeMachine(leftMatch, 0.2);
+
+        MachinePlayer expertMachine = new MachinePlayer(rival, new ExpertProfile());
+        Match expertEmptyMatch = new Match(expertMachine, basePlayer, true, 5, 1024, 576);
+        expertEmptyMatch.getBalls().clear();
+        expertMachine.executeMachine(expertEmptyMatch, 0.2);
+
+        MachinePlayer defensiveMachine = new MachinePlayer(rival, new DefensiveProfile());
+        Match defensiveEmptyMatch = new Match(defensiveMachine, basePlayer, true, 5, 1024, 576);
+        defensiveEmptyMatch.getBalls().clear();
+        defensiveMachine.executeMachine(defensiveEmptyMatch, 0.2);
     }
 }

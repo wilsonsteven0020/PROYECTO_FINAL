@@ -40,7 +40,6 @@ public class PlaySoccerPanel extends ViewPanel{
     private JLabel secondPlayerFlag;
 
     //Balls
-    private int[] ballBounds;
     private Image ballImage;
     private ArrayList<int[]> ballsBounds;
     private ArrayList<String> ballsSkins;
@@ -61,8 +60,9 @@ public class PlaySoccerPanel extends ViewPanel{
     //JButtons
     private JButton pauseButton;
 
-    //PausePanel
+    //Overlay panels
     private PausePanel pausePanel;
+    private MatchResultPanel matchResultPanel;
 
     //Frame-sequence animation attributes
     private boolean inStartAnimation;
@@ -83,7 +83,6 @@ public class PlaySoccerPanel extends ViewPanel{
     public PlaySoccerPanel(){
         currentCountries = new String[]{"CoreaDelSur", "CoreaDelSur"};
         playersSpriteStates = new String[]{"Normal", "Normal"};
-        ballBounds = new int[]{0, 0, 36, 36};
         ballImage = new ImageIcon("resources/PlaySoccerZone/Pelota.png").getImage();
         firstPlayerBounds = new int[]{0, 0, 90, 90};
         secondPlayerBounds = new int[]{0, 0, 90, 90};
@@ -104,8 +103,13 @@ public class PlaySoccerPanel extends ViewPanel{
         setBackgroundImage("resources/PlaySoccerZone/field.png");
         setLayout(new BorderLayout());
         setFocusable(true);
+
         pausePanel = new PausePanel();
         pausePanel.setVisible(false);
+
+        matchResultPanel = new MatchResultPanel();
+        matchResultPanel.setVisible(false);
+
         add(prepareNorthArea(), BorderLayout.NORTH);
         add(pausePanel, BorderLayout.CENTER);
 
@@ -479,9 +483,6 @@ public class PlaySoccerPanel extends ViewPanel{
                 }
             }
         }
-        else if(ballImage != null && ballBounds != null){
-            g.drawImage(ballImage, ballBounds[0], ballBounds[1], ballBounds[2], ballBounds[3], this);
-        }
 
         if(inHalfTime){
             double scale;
@@ -518,6 +519,7 @@ public class PlaySoccerPanel extends ViewPanel{
             animationTimer.stop();
         }
         clearAnimationFrames();
+        hideMatchResult();
         northPanel.setVisible(true);
         pauseButton.setEnabled(true);
         setBackgroundImage("resources/PlaySoccerZone/field.png");
@@ -710,6 +712,7 @@ public class PlaySoccerPanel extends ViewPanel{
         }
 
         pausePanel.applyScale(scale);
+        matchResultPanel.applyScale(scale);
         revalidate();
         repaint();
     }
@@ -732,6 +735,7 @@ public class PlaySoccerPanel extends ViewPanel{
         secondPlayerPowerBar.setValue(0);
         secondPlayerPowerBar.setString("Poder: 0%");
         scoreLabel.setText("0 - 0");
+        hideMatchResult();
         showPauseMenu(false);
     }
 
@@ -749,16 +753,20 @@ public class PlaySoccerPanel extends ViewPanel{
         secondPlayerPowerBar.setString("Poder: " + powerBars[1] + "%");
     }
 
-    public void updateEntitiesAndScore(int[] p1Bounds, int[] p2Bounds, int[] ballBounds, String[] spriteStates, int[] goals){
+    public void updateEntitiesAndScore(int[] p1Bounds, int[] p2Bounds, String[] spriteStates, int[] goals){
         this.firstPlayerBounds = p1Bounds;
         this.secondPlayerBounds = p2Bounds;
-        this.ballBounds = ballBounds;
         this.playersSpriteStates = spriteStates;
         this.scoreLabel.setText(goals[0] + " - " + goals[1]);
         repaint();
     }
 
     public void showPauseMenu(boolean paused){
+        if(paused){
+            matchResultPanel.setVisible(false);
+            remove(matchResultPanel);
+            add(pausePanel, BorderLayout.CENTER);
+        }
         pauseButton.setVisible(!paused);
         pausePanel.setVisible(paused);
         if(!paused){
@@ -766,6 +774,55 @@ public class PlaySoccerPanel extends ViewPanel{
         }
         revalidate();
         repaint();
+    }
+
+    /**
+     * Displays the end-of-match result overlay and hides the pause controls
+     * @param countries country names of player 1 and player 2
+     * @param goals final score [p1Goals, p2Goals]
+     * @param winnerNum 0 if player 1 won, 1 if player 2 won
+     * @param winnerText text announcing the winner
+     * @param pointsText summary of points earned
+     */
+    public void showMatchResult(String[] countries, int[] goals, int winnerNum, String winnerText, String pointsText){
+        pauseButton.setVisible(false);
+        pausePanel.setVisible(false);
+        remove(pausePanel);
+
+        double scale;
+        if(getHeight() > 0){
+            scale = getHeight() / BASE_HEIGHT;
+        }
+        else{
+            scale = 1.0;
+        }
+        matchResultPanel.applyScale(scale);
+        matchResultPanel.configureResult(countries, goals, winnerNum, winnerText, pointsText);
+        add(matchResultPanel, BorderLayout.CENTER);
+        matchResultPanel.setVisible(true);
+        revalidate();
+        repaint();
+    }
+
+    /**
+     * Hides the end-of-match result overlay and restores PausePanel in the center slot
+     */
+    public void hideMatchResult(){
+        if(matchResultPanel != null){
+            matchResultPanel.setVisible(false);
+            remove(matchResultPanel);
+            add(pausePanel, BorderLayout.CENTER);
+            revalidate();
+            repaint();
+        }
+    }
+
+    /**
+     * Indicates if the end-of-match result overlay is currently visible
+     * @return true if showing match result
+     */
+    public boolean isShowingMatchResult(){
+        return matchResultPanel != null && matchResultPanel.isVisible();
     }
 
     public void setMatchStatusText(String text){
@@ -778,6 +835,10 @@ public class PlaySoccerPanel extends ViewPanel{
 
     public PausePanel getPausePanel(){
         return pausePanel;
+    }
+
+    public MatchResultPanel getMatchResultPanel(){
+        return matchResultPanel;
     }
 
     public JLabel getFirstPlayerFlag(){

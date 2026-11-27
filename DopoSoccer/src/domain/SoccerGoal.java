@@ -98,16 +98,4 @@ public class SoccerGoal extends Entity{
             ball.setVelX(dir * Math.max(200.0 * getScale(), Math.abs(ball.getVelX()) * 0.8));
         }
     }
-    @Override
-    public boolean isMachine(){
-        return false;
-    }
-
-    /**
-     * Returns the goal side ("LEFT" or "RIGHT")
-     * @return side string
-     */
-    public String getSide(){
-        return side;
-    }
 }

@@ -43,7 +43,7 @@ public class MachinePlayer extends Player {
      * @param dt time step in seconds
      */
     public void executeMachine(Match match, double dt){
-        if(profile == null || isStunned() || isParalyzed()){
+        if(profile == null || isParalyzed()){
             return;
         }
         decisionTimer -= dt;
@@ -53,20 +53,4 @@ public class MachinePlayer extends Player {
         }
     }
 
-    /**
-     * Assigns a new machine behavior profile to this machine player
-     * @param profile new MachineProfile strategy
-     */
-    public void setProfile(MachineProfile profile){
-        this.profile = profile;
-        this.decisionTimer = 0.0;
-    }
-
-    /**
-     * Returns the current machine behavior profile assigned to this machine player
-     * @return current MachineProfile
-     */
-    public MachineProfile getProfile(){
-        return profile;
-    }
 }
